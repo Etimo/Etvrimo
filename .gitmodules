@@ -1,0 +1,3 @@
+[submodule "usb-libvirt-hotplug"]
+	path = usb-libvirt-hotplug
+	url = https://github.com/Etimo/usb-libvirt-hotplug

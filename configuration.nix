@@ -112,7 +112,7 @@ in {
   # services.xserver.desktopManager.plasma5.enable = true;
 
   # Define a user account.
-  security.pam.enableSSHAgentAuth = true;
+  security.sudo.wheelNeedsPassword = false;
   users.users = {
     root.openssh.authorizedKeys.keys = [
       # Teo

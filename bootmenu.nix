@@ -7,6 +7,7 @@
     ''
       ${pkgs.cowsay}/bin/cowsay -f dragon-and-cow "Welcome to Etvrimo!"
       echo "Press [P] To Play!" | ${pkgs.figlet}/bin/figlet | ${pkgs.lolcat}/bin/lolcat --truecolor
+      echo "Note: You will need to unplug and replug the USB connector for each Vive Link Box after the VMs have started"
       echo "Press Ctrl+Alt+F2 to access the management terminal"
 
       read -N 1 -s action

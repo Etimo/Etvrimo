@@ -3,7 +3,19 @@
 This is an example [[https://nixos.org/][NixOS]] configuration for running multiple [[https://www.vive.com/us/product/vive-virtual-reality-system/][HTC Vive]]s on a single host system. This is accomplished
 by passing through a dedicated GPU (we use AMD Vega 56) per headset, as well as the headset's USB devices, to a VM.
 
+* Table of Contents                                                   :TOC_3_gh:QUOTE:noexport:
+#+BEGIN_QUOTE
+- [[#hardware][Hardware]]
+- [[#setup][Setup]]
+- [[#vm-configuration][VM configuration]]
+- [[#usb-paths][USB Paths]]
+- [[#boot-menu][Boot Menu]]
+#+END_QUOTE
+
 * Hardware
+  :PROPERTIES:
+  :CUSTOM_ID: hardware
+  :END:
 
 For this setup you need a CPU and motherboard that supports IOMMU and PCI-Express passthrough, and which has enough
 PCI-E sockets in /separate/ IOMMU groups for the number of headsets that you're planning to use. It's also helpful
@@ -20,3 +32,194 @@ We use the following setup:
 The AMD B350 and B450 chipsets do /not/ work for a 2-GPU setup, since they only have one PCI-E slot that is connected
 directly to the CPU (the rest are connected via chipset's PCI-E hub, and are in the same IOMMU group as all other
 chipset peripehrals).
+
+Note: The PCI-E vendor/product IDs for the GPU are currently hard-coded in ~vive-virtualization.nix~, so you will need to
+update those if you use a different GPU than us.
+
+* Setup
+
+1. Set up the hardware correctly (see [[#hardware]] for more details)
+2. Install [[https://nixos.org/][NixOS]]
+3. Clone this repo to ~/etc/nixos~
+4. Run ~nixos-generate-config~ to collect hardware-specific configuration (such as partition tables)
+5. Add your site-specific configuration to the NixOS module ~/etc/nixos/passwords.nix~, or set it to ~{}~ to disable
+6. Create your [[#vms]]
+7. Customize [[#usb]]
+8. Customize [[#bootmenu]]
+9. ~nixos-rebuild boot && reboot~
+10. Follow the on-screen prompts
+
+Note: This repository is set up to automatically give SSH access to Etimo employees (since this is what we run ourselves).
+If you're not setting up an etimo machine then you'll probably want to disable the etimoCommon module in ~configuration.nix~.
+
+* VM configuration
+  :PROPERTIES:
+  :CUSTOM_ID: vms
+  :END:
+
+Set up a Libvirt VM for each headset. You should set up PCI-E forwarding for the GPUs and
+USB forwarding for input devices (such as mice and keyboards), but /not/ USB forwarding for
+the headsets (this is handled in [[#usb]]). Here's our configuration, to use as a template:
+
+#+begin_src xml
+<domain type='kvm'>
+  <name>Etvrimo</name>
+  <uuid>0bce512d-9a31-472c-b279-1eb7860bb4ce</uuid>
+  <memory unit='KiB'>8388608</memory>
+  <currentMemory unit='KiB'>8388608</currentMemory>
+  <vcpu placement='static'>6</vcpu>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-2.11'>hvm</type>
+    <loader readonly='yes' type='pflash'>/run/libvirt/nix-ovmf/OVMF_CODE.fd</loader>
+    <nvram>/var/lib/libvirt/qemu/nvram/Etvrimo_VARS.fd</nvram>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <hyperv>
+      <relaxed state='on'/>
+      <vapic state='on'/>
+      <spinlocks state='on' retries='8191'/>
+    </hyperv>
+    <vmport state='off'/>
+  </features>
+  <cpu mode='host-model' check='partial'>
+    <model fallback='allow'/>
+    <topology sockets='1' cores='3' threads='2'/>
+  </cpu>
+  <clock offset='localtime'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+    <timer name='hypervclock' present='yes'/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <pm>
+    <suspend-to-mem enabled='no'/>
+    <suspend-to-disk enabled='no'/>
+  </pm>
+  <devices>
+    <emulator>/run/libvirt/nix-emulators/qemu-kvm</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='/var/lib/libvirt/images/Etvrimo-1.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+    </disk>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='/var/lib/libvirt/images/Etvrimo.qcow2'/>
+      <target dev='vdb' bus='virtio'/>
+      <boot order='2'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x0a' function='0x0'/>
+    </disk>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/var/lib/libvirt/images/virtio-win-0.1.141.iso'/>
+      <target dev='hdb' bus='ide'/>
+      <readonly/>
+      <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+      <boot order='1'/>
+      <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+    </disk>
+    <controller type='usb' index='0' model='nec-xhci' ports='15'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root'/>
+    <controller type='ide' index='0'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
+    </controller>
+    <controller type='virtio-serial' index='0'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+    </controller>
+    <interface type='network'>
+      <mac address='52:54:00:e4:f5:e8'/>
+      <source network='default'/>
+      <model type='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+    </interface>
+    <serial type='pty'>
+      <target type='isa-serial' port='0'>
+        <model name='isa-serial'/>
+      </target>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+    <channel type='spicevmc'>
+      <target type='virtio' name='com.redhat.spice.0'/>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </channel>
+    <input type='tablet' bus='usb'>
+      <address type='usb' bus='0' port='1'/>
+    </input>
+    <input type='mouse' bus='ps2'/>
+    <input type='keyboard' bus='ps2'/>
+    <sound model='ich6'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+    </sound>
+    <hostdev mode='subsystem' type='usb' managed='yes'>
+      <source>
+        <vendor id='0x046d'/>
+        <product id='0xc30e'/>
+      </source>
+      <address type='usb' bus='0' port='4'/>
+    </hostdev>
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+        <address domain='0x0000' bus='0x0a' slot='0x00' function='0x0'/>
+      </source>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </hostdev>
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <source>
+        <address domain='0x0000' bus='0x0a' slot='0x00' function='0x1'/>
+      </source>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
+    </hostdev>
+    <hostdev mode='subsystem' type='usb' managed='yes'>
+      <source>
+        <vendor id='0x046d'/>
+        <product id='0xc069'/>
+      </source>
+      <address type='usb' bus='0' port='5'/>
+    </hostdev>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='2'/>
+    </redirdev>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='3'/>
+    </redirdev>
+    <memballoon model='virtio'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+    </memballoon>
+  </devices>
+</domain>
+#+end_src
+
+Note: Windows does /not/ support VirtIO devices by default, so you will have to replace all virtio devices with
+emulated hardware, install [[https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe][spice-guest-tools]], and then switch back.
+
+* USB Paths
+  :PROPERTIES:
+  :CUSTOM_ID: usb
+  :END:
+
+You will need to configure the USB paths that you have connected the Vive Link Boxes to. See the comments for
+~hotplugVive~ in ~vive-virtualization.nix~.
+
+* Boot Menu
+  :PROPERTIES:
+  :CUSTOM_ID: bootmenu
+  :END:
+
+~bootmenu.nix~ enables a nice boot menu that allows users to start the VMs without logging in or knowing
+how to use libvirt. However, this is currently hardcoded to start the VMs named Etvrimo and Etvrimo-2,
+if you have named your VMs something else then you will have to customize this script (or disable it).

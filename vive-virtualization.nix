@@ -39,6 +39,11 @@
         [ 1 7 ]
         [ 2 ]
       ];
+      # Find the pciPath to your USB controller by locating the USB controller with `lspci`, and then use `lspci -t`
+      # to find the full path. The path is relative to /sys/devices.
+      # Find the usbBus and usbPath by locating the Vive Link Box's emulated hub in the output of `lsusb -t`.
+      # usbbus is the top-level bus, and usbPath is the path of port numbers down to the hub (not including the root hub).
+      # Note that this path ultimately identifies a single USB port on the computer.
       hotplugVive = vm: pciPath: usbBus: usbPath: lib.concatMapStringsSep "\n" (usbSubpath: hotplugUsbDevice vm pciPath usbBus (usbPath ++ usbSubpath)) viveHotplugSubdevices;
     in ''
       # Next to the USB-C port: Vive 1
@@ -48,19 +53,5 @@
       # Front left USB port: Vive 2
       # Should include all non-hub subdevices
       ${hotplugVive "Etvrimo-2" "pci0000:00/0000:00:01.3/0000:01:00.0" 1 [ 4 ]}
-
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.5",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.6",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.7",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/bus/usb/devices/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.5",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.6",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.7",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
     '';
 }

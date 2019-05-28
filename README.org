@@ -5,12 +5,17 @@ by passing through a dedicated GPU (we use AMD Vega 56) per headset, as well as 
 
 * Table of Contents                                                   :TOC_3_gh:QUOTE:noexport:
 #+BEGIN_QUOTE
+- [[#performance][Performance]]
 - [[#hardware][Hardware]]
 - [[#setup][Setup]]
 - [[#vm-configuration][VM configuration]]
 - [[#usb-paths][USB Paths]]
 - [[#boot-menu][Boot Menu]]
 #+END_QUOTE
+
+* Performance
+
+Seems good enough for now. Everything we've thrown at it so far has worked fine (including [[https://store.steampowered.com/app/620980/Beat_Saber/][Beat Saber]] and [[https://store.steampowered.com/app/342180/Arizona_Sunshine/][Arizona Sunshine]]).
 
 * Hardware
   :PROPERTIES:

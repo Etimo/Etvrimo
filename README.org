@@ -1,4 +1,22 @@
 #+TITLE: Etvrimo Vive VM host
 
 This is an example [[https://nixos.org/][NixOS]] configuration for running multiple [[https://www.vive.com/us/product/vive-virtual-reality-system/][HTC Vive]]s on a single host system. This is accomplished
-by forwarding a dedicated GPU (we use AMD Vega 56) per headset, as well as the headset's USB devices, to a VM.
+by passing through a dedicated GPU (we use AMD Vega 56) per headset, as well as the headset's USB devices, to a VM.
+
+* Hardware
+
+For this setup you need a CPU and motherboard that supports IOMMU and PCI-Express passthrough, and which has enough
+PCI-E sockets in /separate/ IOMMU groups for the number of headsets that you're planning to use. It's also helpful
+if the GPU drivers don't explicitly try to block PCI-E passthrough (looking at you, Nvidia).
+
+We use the following setup:
+
+| Component   | Model               |
+|-------------+---------------------|
+| Motherboard | ASUS Prime X470-PRO |
+| CPU         | AMD Ryzen 7 2700    |
+| GPU         | AMD Vega 56         |
+
+The AMD B350 and B450 chipsets do /not/ work for a 2-GPU setup, since they only have one PCI-E slot that is connected
+directly to the CPU (the rest are connected via chipset's PCI-E hub, and are in the same IOMMU group as all other
+chipset peripehrals).

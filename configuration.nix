@@ -10,14 +10,16 @@ in {
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ./passwords.nix
+      ./vive-virtualization.nix
+      ./bootmenu.nix
       (etimoCommon + "/employee-users.nix")
     ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  #boot.kernelPackages = pkgs.linuxPackages_4_18;
-  #boot.kernelPackages = pkgs.linuxPackages_testing;
+  # GPU forwarding on Ryzen is still fairly experimental,
+  # and requires a recent kernel
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   hardware.cpu.amd.updateMicrocode = true;
@@ -35,16 +37,6 @@ in {
     # for VFIO
     # "iommu=soft"
   ];
-
-  boot.extraModprobeConfig =
-    ''
-      # Reserve the GPUs for VMs
-      options vfio-pci ids=1002:687f,1002:aaf8
-
-      # Required for Windows 10 1803+ to boot: https://www.reddit.com/r/VFIO/comments/8gdbnm/ryzen_2700_system_thread_exception_not_handled/dyo2yab/
-      options kvm ignore_msrs=1
-    '';
-  boot.initrd.kernelModules = [ "vfio_pci" "vfio" "vfio_iommu_type1" "vfio_virqfd" ];
 
   networking.hostName = "etvrimo"; # Define your hostname.
   networking.networkmanager.enable = true;
@@ -105,8 +97,6 @@ in {
   # Enable touchpad support.
   # services.xserver.libinput.enable = true;
 
-  virtualisation.libvirtd.enable = true;
-
   # Enable the KDE Desktop Environment.
   # services.xserver.displayManager.sddm.enable = true;
   # services.xserver.desktopManager.plasma5.enable = true;
@@ -127,79 +117,11 @@ in {
     };
   };
 
-  security.wrappers.play-vr = {
-    source = pkgs.writeScript "play-vr"
-      ''
-        #!/usr/bin/env bash
-        set -euo pipefail
-        for vm in Etvrimo{,-2}; do
-          ${pkgs.libvirt}/bin/virsh start $vm
-        done
-      '';
-    owner = "root";
-    group = "root";
-  };
-
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
   system.stateVersion = "18.03"; # Did you read the comment?
-
-  # Forward Vive devices to the corresponding VM
-  services.udev.extraRules =
-    let
-      usb-libvirt-hotplug = pkgs.stdenvNoCC.mkDerivation {
-        name = "usb-libvirt-hotplug";
-        src = ./usb-libvirt-hotplug;
-        buildInputs = [ pkgs.makeWrapper ];
-        installPhase =
-          ''
-            mkdir -p $out/bin
-            cp usb-libvirt-hotplug.sh $out/bin/usb-libvirt-hotplug
-            wrapProgram $out/bin/usb-libvirt-hotplug --prefix PATH : ${lib.makeBinPath [ pkgs.libvirt ]}
-          '';
-      };
-      runUsbLibvirtHotplug = "${usb-libvirt-hotplug}/bin/usb-libvirt-hotplug";
-      # Generates a list of all prefix sublists: [a] -> [[a]]
-      # Example: prefixes [ 1 2 3 ] -> [ [ 1 ] [ 1 2 ] [ 1 2 3 ] ]
-      prefixes = list: lib.genList (n: lib.take (n + 1) list) (lib.length list);
-      usbName = bus: path: toString bus + "-" + lib.concatMapStringsSep "." toString path;
-      usbPath = bus: path: "usb${toString bus}/" + lib.concatStringsSep "/" (map (usbName bus) (prefixes path));
-      hotplugUsbDevice = vm: pciPath: usbBus: usbSubpath:
-        ''SUBSYSTEM=="usb",DEVPATH=="/devices/${pciPath}/${usbPath usbBus usbSubpath}",RUN+="${runUsbLibvirtHotplug} ${vm}"'';
-      viveHotplugSubdevices = [
-        [ 1 1 ]
-        [ 1 2 ]
-        [ 1 5 ]
-        [ 1 6 ]
-        [ 1 7 ]
-        [ 2 ]
-      ];
-      hotplugVive = vm: pciPath: usbBus: usbPath: lib.concatMapStringsSep "\n" (usbSubpath: hotplugUsbDevice vm pciPath usbBus (usbPath ++ usbSubpath)) viveHotplugSubdevices;
-    in ''
-      # Next to the USB-C port: Vive 1
-      # Should include all non-hub subdevices
-      ${hotplugVive "Etvrimo" "pci0000:00/0000:00:01.3/0000:01:00.0" 1 [ 5 ]}
-
-      # Front left USB port: Vive 2
-      # Should include all non-hub subdevices
-      ${hotplugVive "Etvrimo-2" "pci0000:00/0000:00:01.3/0000:01:00.0" 1 [ 4 ]}
-
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.5",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.6",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.1/5-4.1.7",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:07.1/0000:0e:00.3/usb5/5-4/5-4.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      #SUBSYSTEM=="usb",DEVPATH=="/bus/usb/devices/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.1",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.5",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.6",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.1/5-4.1.7",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-      # SUBSYSTEM=="usb",DEVPATH=="/devices/pci0000:00/0000:00:01.3/0000:01:00.0/usb1/5-4/5-4.2",RUN+="${runUsbLibvirtHotplug} Etvrimo"
-    '';
 
   nix.maxJobs = 32;
   nix.buildCores = 16;
@@ -208,35 +130,4 @@ in {
       # Always refetch etimoCommon
       tarball-ttl = 0
     '';
-
-  systemd.services.etvrimo-bootmenu = {
-    wantedBy = [ "multi-user.target" ];
-    conflicts = [ "getty@tty1.service" ];
-    script =
-    ''
-      ${pkgs.cowsay}/bin/cowsay -f dragon-and-cow "Welcome to Etvrimo!"
-      echo "Press [P] To Play!" | ${pkgs.figlet}/bin/figlet | ${pkgs.lolcat}/bin/lolcat --truecolor
-      echo "Press Ctrl+Alt+F2 to access the management terminal"
-
-      read -N 1 -s action
-      case $action in
-      p | P)
-        ${pkgs.libvirt}/bin/virsh start Etvrimo
-        ${pkgs.libvirt}/bin/virsh start Etvrimo-2
-      esac
-    '';
-    # Run on TTY1
-    serviceConfig = {
-      StandardInput = "tty";
-      StandardOutput = "tty";
-      TTYPath = "/dev/tty1";
-      TTYReset = true;
-      TTYVTDisallocate = true;
-      Restart = "always";
-      RestartSec = "0ms";
-    };
-    unitConfig = {
-      StartLimitIntervalSec = "0";
-    };
-  };
 }

@@ -1,0 +1,4 @@
+#+TITLE: Etvrimo Vive VM host
+
+This is an example [[https://nixos.org/][NixOS]] configuration for running multiple [[https://www.vive.com/us/product/vive-virtual-reality-system/][HTC Vive]]s on a single host system. This is accomplished
+by forwarding a dedicated GPU (we use AMD Vega 56) per headset, as well as the headset's USB devices, to a VM.

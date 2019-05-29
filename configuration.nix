@@ -81,13 +81,6 @@ in {
       # Teo
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxxlJ60d00gRVx51KJtUP2gNYIka3uL6r1zF76HIKOP583K4iiSODxPrtVocJHO2CPyCKYeZpEVjCPSS0lHy1meyjQp2rWyOQm61Us5gItiG5yWN0Tfqnv7bjbdbByVedrhlGMLr/bzkOSGqM+yKdbCQnQVjTWuEj4hQ1j0eVCjww4chiYCJ9dgcH2O7C43YEgp//r4/U00AW5Q+RYgDpC7nMm+7cHsE367lciMXXjHabinoZAyitgpnuE0epbc4GSuA94Ai9WPvBd5GSIvLnbR12FESdG5KQDB82TeKi9lBZ1jHzGQl3jyA6q4mokgiA7/bDQQFs9wJcfkEFe9e2J cardno:000606515530"
     ];
-
-    teo-buildslave = {
-      isNormalUser = true;
-      openssh.authorizedKeys.keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL89Iw6jZFM3TgQN+09aC3pFSad8tn72oHCfUyikMzyD root@teo-etimo"
-      ];
-    };
   };
 
   # This value determines the NixOS release with which your system is to be

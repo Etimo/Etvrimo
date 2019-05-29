@@ -18,9 +18,6 @@ in {
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  # GPU forwarding on Ryzen is still fairly experimental,
-  # and requires a recent kernel
-  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   hardware.cpu.amd.updateMicrocode = true;
 
@@ -40,7 +37,6 @@ in {
 
   networking.hostName = "etvrimo"; # Define your hostname.
   networking.networkmanager.enable = true;
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Select internationalisation properties.
   i18n = {
@@ -66,42 +62,19 @@ in {
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   programs.bash.enableCompletion = true;
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = { enable = true; enableSSHSupport = true; };
 
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
   services.openssh.passwordAuthentication = false;
+
   # Open ports in the firewall.
   networking.firewall.allowedTCPPorts = [
     22 # SSH
   ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
 
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
-
-  # Enable sound.
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
-
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
-  # services.xserver.layout = "us";
-  # services.xserver.xkbOptions = "eurosign:e";
-
-  # Enable touchpad support.
-  # services.xserver.libinput.enable = true;
-
-  # Enable the KDE Desktop Environment.
-  # services.xserver.displayManager.sddm.enable = true;
-  # services.xserver.desktopManager.plasma5.enable = true;
-
-  # Define a user account.
+  # Define extra user accounts.
   security.sudo.wheelNeedsPassword = false;
   users.users = {
     root.openssh.authorizedKeys.keys = [
@@ -123,6 +96,7 @@ in {
   # should.
   system.stateVersion = "18.03"; # Did you read the comment?
 
+  # Speed up Nix builds
   nix.maxJobs = 32;
   nix.buildCores = 16;
   nix.extraOptions =

@@ -3,6 +3,9 @@
 {
   virtualisation.libvirtd.enable = true;
 
+  # PCI-E forwarding on Ryzen is still fairly experimental, and requires a recent kernel
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   boot.initrd.kernelModules = [ "vfio_pci" "vfio" "vfio_iommu_type1" "vfio_virqfd" ];
   boot.extraModprobeConfig =
     ''

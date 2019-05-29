@@ -18,9 +18,6 @@ by passing through a dedicated GPU (we use AMD Vega 56) per headset, as well as 
 Seems good enough for now. Everything we've thrown at it so far has worked fine (including [[https://store.steampowered.com/app/620980/Beat_Saber/][Beat Saber]] and [[https://store.steampowered.com/app/342180/Arizona_Sunshine/][Arizona Sunshine]]).
 
 * Hardware
-  :PROPERTIES:
-  :CUSTOM_ID: hardware
-  :END:
 
 For this setup you need a CPU and motherboard that supports IOMMU and PCI-Express passthrough, and which has enough
 PCI-E sockets in /separate/ IOMMU groups for the number of headsets that you're planning to use. It's also helpful
@@ -42,13 +39,13 @@ If you use a different GPU then you will have to change ~etvrimo.vive.gpuProduct
 
 * Setup
 
-1. Set up the hardware correctly (see [[#hardware]] for more details)
+1. Set up the hardware correctly (see [[#hardware][Hardware]] for more details)
 2. Install [[https://nixos.org/][NixOS]]
 3. Clone this repo to ~/etc/nixos~
 4. Run ~nixos-generate-config~ to collect hardware-specific configuration (such as partition tables)
 5. Add your site-specific configuration to the NixOS module ~/etc/nixos/passwords.nix~, or set it to ~{}~ to disable
-6. Create your [[#vms]]
-7. Customize [[#usb]]
+6. Create your [[#vm-configuration][VMs]]
+7. Customize [[#usb-paths][USB paths]]
 8. ~nixos-rebuild boot && reboot~
 9. Follow the on-screen prompts
 
@@ -56,13 +53,10 @@ Note: This repository is set up to automatically give SSH access to Etimo employ
 If you're not setting up an etimo machine then you'll probably want to disable the etimoCommon module in ~configuration.nix~.
 
 * VM configuration
-  :PROPERTIES:
-  :CUSTOM_ID: vms
-  :END:
 
 Set up a Libvirt VM for each headset. You should set up PCI-E forwarding for the GPUs and
 USB forwarding for input devices (such as mice and keyboards), but /not/ USB forwarding for
-the headsets (this is handled in [[#usb]]). Here's our configuration, to use as a template:
+the headsets (this is handled in [[#usb-paths][USB paths]]). Here's our configuration, to use as a template:
 
 #+begin_src xml
 <domain type='kvm'>
@@ -211,9 +205,6 @@ Note: Windows does /not/ support VirtIO devices by default, so you will have to 
 emulated hardware, install [[https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe][spice-guest-tools]], and then switch back.
 
 * USB Paths
-  :PROPERTIES:
-  :CUSTOM_ID: usb
-  :END:
 
 You will need to configure the USB paths that you have connected the Vive Link Boxes to, by changing ~etvrimo.vive.devices~ in ~configuration.nix~.
 ~vive-virtualization.nix~ also includes some documentation on what the different options mean.

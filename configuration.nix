@@ -15,6 +15,35 @@ in {
       (etimoCommon + "/employee-users.nix")
     ];
 
+  etvrimo = {
+    vive = {
+      gpuProductIds =
+        [
+          # AMD Vega 56 Video
+          "1002:687f"
+          # AMD Vega 56 Audio
+          "1002:aaf8"
+        ];
+
+      devices = [
+        # Next to the USB-C port: Vive 1
+        {
+          vm = "Etvrimo";
+          pciPath = "pci0000:00/0000:00:01.3/0000:01:00.0";
+          usbBus = 1;
+          usbPath = [ 5 ];
+        }
+        # Front left USB port: Vive 2
+        {
+          vm = "Etvrimo-2";
+          pciPath = "pci0000:00/0000:00:01.3/0000:01:00.0";
+          usbBus = 1;
+          usbPath = [ 4 ];
+        }
+      ];
+    };
+  };
+
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

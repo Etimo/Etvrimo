@@ -38,8 +38,7 @@ The AMD B350 and B450 chipsets do /not/ work for a 2-GPU setup, since they only 
 directly to the CPU (the rest are connected via chipset's PCI-E hub, and are in the same IOMMU group as all other
 chipset peripehrals).
 
-Note: The PCI-E vendor/product IDs for the GPU are currently hard-coded in ~vive-virtualization.nix~, so you will need to
-update those if you use a different GPU than us.
+If you use a different GPU then you will have to change ~etvrimo.vive.gpuProductIds~ in ~configuration.nix~.
 
 * Setup
 
@@ -50,9 +49,8 @@ update those if you use a different GPU than us.
 5. Add your site-specific configuration to the NixOS module ~/etc/nixos/passwords.nix~, or set it to ~{}~ to disable
 6. Create your [[#vms]]
 7. Customize [[#usb]]
-8. Customize [[#bootmenu]]
-9. ~nixos-rebuild boot && reboot~
-10. Follow the on-screen prompts
+8. ~nixos-rebuild boot && reboot~
+9. Follow the on-screen prompts
 
 Note: This repository is set up to automatically give SSH access to Etimo employees (since this is what we run ourselves).
 If you're not setting up an etimo machine then you'll probably want to disable the etimoCommon module in ~configuration.nix~.
@@ -217,14 +215,10 @@ emulated hardware, install [[https://www.spice-space.org/download/windows/spice-
   :CUSTOM_ID: usb
   :END:
 
-You will need to configure the USB paths that you have connected the Vive Link Boxes to. See the comments for
-~hotplugVive~ in ~vive-virtualization.nix~.
+You will need to configure the USB paths that you have connected the Vive Link Boxes to, by changing ~etvrimo.vive.devices~ in ~configuration.nix~.
+~vive-virtualization.nix~ also includes some documentation on what the different options mean.
 
 * Boot Menu
-  :PROPERTIES:
-  :CUSTOM_ID: bootmenu
-  :END:
 
 ~bootmenu.nix~ enables a nice boot menu that allows users to start the VMs without logging in or knowing
-how to use libvirt. However, this is currently hardcoded to start the VMs named Etvrimo and Etvrimo-2,
-if you have named your VMs something else then you will have to customize this script (or disable it).
+how to use libvirt.

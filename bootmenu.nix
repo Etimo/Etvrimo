@@ -1,4 +1,4 @@
-{pkgs, ...}:
+{pkgs, config, lib, ...}:
 {
   systemd.services.etvrimo-bootmenu = {
     wantedBy = [ "multi-user.target" ];
@@ -13,8 +13,7 @@
       read -N 1 -s action
       case $action in
       p | P)
-        ${pkgs.libvirt}/bin/virsh start Etvrimo
-        ${pkgs.libvirt}/bin/virsh start Etvrimo-2
+        ${lib.concatMapStringsSep "\n" (device: "${pkgs.libvirt}/bin/virsh start ${device.vm}") config.etvrimo.vive.devices}
       esac
     '';
     # Run on TTY1

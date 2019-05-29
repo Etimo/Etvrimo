@@ -35,7 +35,7 @@ The AMD B350 and B450 chipsets do /not/ work for a 2-GPU setup, since they only 
 directly to the CPU (the rest are connected via chipset's PCI-E hub, and are in the same IOMMU group as all other
 chipset peripehrals).
 
-If you use a different GPU then you will have to change ~etvrimo.vive.gpuProductIds~ in ~configuration.nix~.
+If you use a different GPU then you will have to change ~etvrimo.vive.gpuProductIds~ in [[./configuration.nix]].
 
 * Setup
 
@@ -43,14 +43,14 @@ If you use a different GPU then you will have to change ~etvrimo.vive.gpuProduct
 2. Install [[https://nixos.org/][NixOS]]
 3. Clone this repo to ~/etc/nixos~
 4. Run ~nixos-generate-config~ to collect hardware-specific configuration (such as partition tables)
-5. Add your site-specific configuration to the NixOS module ~/etc/nixos/passwords.nix~, or set it to ~{}~ to disable
+5. Add your site-specific configuration to the NixOS module [[./passwords.nix]], or set it to ~{}~ to disable
 6. Create your [[#vm-configuration][VMs]]
 7. Customize [[#usb-paths][USB paths]]
 8. ~nixos-rebuild boot && reboot~
 9. Follow the on-screen prompts
 
 Note: This repository is set up to automatically give SSH access to Etimo employees (since this is what we run ourselves).
-If you're not setting up an etimo machine then you'll probably want to disable the etimoCommon module in ~configuration.nix~.
+If you're not setting up an etimo machine then you'll probably want to disable the etimoCommon module in [[./configuration.nix]].
 
 * VM configuration
 
@@ -206,10 +206,10 @@ emulated hardware, install [[https://www.spice-space.org/download/windows/spice-
 
 * USB Paths
 
-You will need to configure the USB paths that you have connected the Vive Link Boxes to, by changing ~etvrimo.vive.devices~ in ~configuration.nix~.
-~vive-virtualization.nix~ also includes some documentation on what the different options mean.
+You will need to configure the USB paths that you have connected the Vive Link Boxes to, by changing ~etvrimo.vive.devices~ in [[./configuration.nix]].
+[[./vive-virtualization.nix]] also includes some documentation on what the different options mean.
 
 * Boot Menu
 
-~bootmenu.nix~ enables a nice boot menu that allows users to start the VMs without logging in or knowing
+[[./bootmenu.nix]] enables a nice boot menu that allows users to start the VMs without logging in or knowing
 how to use libvirt.
